@@ -1,0 +1,12 @@
+# This instance's vhost inventory (see INSTANCE.md; label. route retired
+# with the labeler app — Zoraxy host removal pending).
+add "code.$DOMAIN"        paseo:6767
+add "dockhand.$DOMAIN"    dockhand:3000
+add "remi.$DOMAIN"        remi_backend-frontend-1:4321
+add "opendesign.$DOMAIN"  opendesign:7456
+add "qdrant.$DOMAIN"      apps:8125
+add "ideas.$DOMAIN"       apps:8124
+add "booksearch.$DOMAIN"  apps:8126
+add "graph.$DOMAIN"       apps:8127
+add "bolt.$DOMAIN"        apps:8128
+add "routing.$DOMAIN"     zoraxy:8000

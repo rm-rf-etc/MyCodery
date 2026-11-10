@@ -1,0 +1,6 @@
+.env
+.env.*
+.superpowers/
+.opencode/
+*.pem
+*.key
