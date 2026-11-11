@@ -30,7 +30,8 @@ remi. → remi_backend-frontend-1:4321 · opendesign. → opendesign:7456 ·
 qdrant. → apps:8125 · ideas. → apps:8124 · booksearch. → apps:8126 ·
 graph. → apps:8127 · bolt. → apps:8128 · routing. → zoraxy:8000
 
-(`label.` retired with the labeler app — Zoraxy host removal pending.)
+(`label.` retired with the labeler app — Zoraxy host removed 2026-11-10.
+Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
 
 ## .env keys beyond templates
 
@@ -60,10 +61,8 @@ graph. → apps:8127 · bolt. → apps:8128 · routing. → zoraxy:8000
 
 1. **REMI helpers in apps** (qdrant/graph/bolt proxies, ideas, booksearch on
    8123-8128) — layer violation; migrate into `remi_backend`, re-point Zoraxy
-2. `label.` Zoraxy proxy-host removal (app retired)
-3. `dbgate.` Zoraxy proxy-host creation (service deployed, no route yet)
-4. paseo/apps visibility mounts + relocated opencode-config path — land with
-   the next gated devtools deploy
+2. paseo/apps visibility mounts + relocated opencode-config path + profiles
+   (COMPOSE_PROFILES) — staged, land with the next gated devtools deploy
 5. Host-side `rm -rf` needed for root-owned leftovers: `/opt/codery/projects/
    Codery/system/` (3.7 GB build remnants) + `/opt/codery/projects/Codery.old/`
    (64 MB pre-split tree; paseo-owned parts removed, root-owned node_modules +
