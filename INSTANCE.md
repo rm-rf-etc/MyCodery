@@ -38,6 +38,24 @@ dbgate. route pending creation.)
 (zoraxy bootstrap-state.sh), `TAILNET_IP` (stack .envs), `DOCKHAND_API_TOKEN`
 (devtools stack .env → paseo MCP).
 
+## Deployment decisions (2026-11-10, P2)
+
+- **opendesign builds on-host (Option B)**: the devtools runtime compose
+  (Dockhand copy) carries a `build:` section — context
+  `/opt/codery/projects/Codery/images/opendesign`, image tag `codery-od:local`.
+  No ghcr dependency for opendesign. Update path: edit the Dockerfile pin →
+  Dockhand Deploy with *build* enabled.
+- **dbgate**: pre-provisioned connection must be named WITHOUT dashes
+  (`remi`, not `remi-mongo`) — dbgate's env-key lookup silently yields an
+  undefined engine for dashed names. Connection lives in the runtime compose
+  (instance config); REMI Mongo is authless on the internal network.
+- **Dockhand deploys are local-first**: the dockhand MCP `stack_sync` defaults
+  to `pull:false` — private ghcr images (paseo/apps) need either registry
+  creds in Dockhand (Settings → Registries, GHCR_USERNAME/GHCR_TOKEN) or a
+  host-side `docker pull` before deploying refreshed images.
+- paseo/apps were not recreated in P2 (config-hash preserved); their ghcr
+  images remain the pre-P2 versions.
+
 ## Known debt / pending work
 
 1. **REMI helpers in apps** (qdrant/graph/bolt proxies, ideas, booksearch on
