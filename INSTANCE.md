@@ -39,6 +39,18 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
 (zoraxy bootstrap-state.sh), `TAILNET_IP` (stack .envs), `DOCKHAND_API_TOKEN`
 (devtools stack .env → paseo MCP).
 
+## P3 notes (2026-11-11)
+
+- **paseo→apps SSH**: phase C created `/opt/codery/ssh/agent-to-apps/` as an
+  EMPTY directory (keypair never staged) — ssh was silently broken since the
+  migration. Fixed 2026-11-11: fresh keypair generated in the paseo home
+  volume (`~/.ssh/agent-to-apps.key` + `~/.ssh/config`), pubkey appended to
+  `/opt/codery/ssh/authorized_keys` on the host. Volume-resident config
+  survives recreates; the compose mount of the empty dir is now vestigial.
+- **apps SSH host keys**: changed once at the phase-C transition (Nov 9) and
+  correctly persisted through today's recreate — one-time artifact, volume
+  persistence confirmed working.
+
 ## Deployment decisions (2026-11-10, P2)
 
 - **opendesign builds on-host (Option B)**: the devtools runtime compose
@@ -63,9 +75,4 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
    8123-8128) — layer violation; migrate into `remi_backend`, re-point Zoraxy
 2. paseo/apps visibility mounts + relocated opencode-config path + profiles
    (COMPOSE_PROFILES) — staged, land with the next gated devtools deploy
-5. Host-side `rm -rf` needed for root-owned leftovers: `/opt/codery/projects/
-   Codery/system/` (3.7 GB build remnants) + `/opt/codery/projects/Codery.old/`
-   (64 MB pre-split tree; paseo-owned parts removed, root-owned node_modules +
-   skills/ remain — the live paseo config mount pins this inode, so leave until
-   the next paseo recreate, then remove both)
-6. apps nginx `:8080` transition publish — retire after route audit
+3. apps nginx `:8080` transition publish — retire after route audit
