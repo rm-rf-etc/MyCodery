@@ -25,12 +25,12 @@ shared history) and holds only instance facts.
 
 ## Vhosts (Zoraxy)
 
-code. → paseo:6767 · dockhand. → dockhand:3000 · remi. → remi_backend-frontend-1:4321
-opendesign. → opendesign:7456 · qdrant. → apps:8125 · ideas. → apps:8124 ·
-booksearch. → apps:8126 · graph. → apps:8127 · bolt. → apps:8128 · routing. → zoraxy:8000
+code. → paseo:6767 · dbgate. → dbgate:3000 · dockhand. → dockhand:3000 ·
+remi. → remi_backend-frontend-1:4321 · opendesign. → opendesign:7456 ·
+qdrant. → apps:8125 · ideas. → apps:8124 · booksearch. → apps:8126 ·
+graph. → apps:8127 · bolt. → apps:8128 · routing. → zoraxy:8000
 
-(`label.` retired with the labeler app — Zoraxy host removal pending.
-dbgate. route pending creation.)
+(`label.` retired with the labeler app — Zoraxy host removal pending.)
 
 ## .env keys beyond templates
 

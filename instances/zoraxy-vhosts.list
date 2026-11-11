@@ -1,6 +1,7 @@
 # This instance's vhost inventory (see INSTANCE.md; label. route retired
 # with the labeler app — Zoraxy host removal pending).
 add "code.$DOMAIN"        paseo:6767
+add "dbgate.$DOMAIN"      dbgate:3000
 add "dockhand.$DOMAIN"    dockhand:3000
 add "remi.$DOMAIN"        remi_backend-frontend-1:4321
 add "opendesign.$DOMAIN"  opendesign:7456
