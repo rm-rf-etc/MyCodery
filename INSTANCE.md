@@ -27,8 +27,9 @@ shared history) and holds only instance facts.
 
 code. → paseo:6767 · dbgate. → dbgate:3000 · dockhand. → dockhand:3000 ·
 remi. → remi_backend-frontend-1:4321 · opendesign. → opendesign:7456 ·
-qdrant. → apps:8125 · ideas. → apps:8124 · booksearch. → apps:8126 ·
-graph. → apps:8127 · bolt. → apps:8128 · routing. → zoraxy:8000
+qdrant. → remi-qdrant-proxy:8125 · ideas. → remi-ideas:8124 ·
+booksearch. → remi-booksearch:8126 · graph. → remi-graph-proxy:8127 ·
+bolt. → remi-bolt-proxy:8128 · routing. → zoraxy:8000
 
 (`label.` retired with the labeler app — Zoraxy host removed 2026-11-10.
 Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
@@ -71,8 +72,33 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
 
 ## Known debt / pending work
 
-1. **REMI helpers in apps** (qdrant/graph/bolt proxies, ideas, booksearch on
-   8123-8128) — layer violation; migrate into `remi_backend`, re-point Zoraxy
-2. paseo/apps visibility mounts + relocated opencode-config path + profiles
-   (COMPOSE_PROFILES) — staged, land with the next gated devtools deploy
-3. apps nginx `:8080` transition publish — retire after route audit
+1. apps nginx `:8080` transition publish — retire after final route audit
+   (no vhost targets it since P4)
+
+## P4 notes (2026-11-11)
+
+- REMI helper UIs (qdrant/ideas/booksearch/graph/bolt) migrated out of the
+  apps container into this stack as bind-mounted containers
+  (remi-qdrant-proxy / remi-ideas / remi-booksearch / remi-graph-proxy /
+  remi-bolt-proxy); Zoraxy upstreams re-pointed; apps ports 8124-8128
+  retired (s6 bundles removed, ports refused).
+- **Dockhand "remi" stack**: remi_backend was ADOPTED into Dockhand without
+  a compose location, so it cannot deploy. A sibling stack "remi" was
+  registered from an ABSOLUTIZED copy of the repo compose (all binds, build
+  contexts and env_files → /opt/codery/projects/REMI/...); deploying it
+  reconciles the same compose project (`name: remi_backend` in the file)
+  and is the ONLY deploy path for REMI until Dockhand supports
+  adopted-stack locations. The old "remi_backend" record is a cosmetic
+  duplicate view of the same containers.
+- REMI backend rebuilds work from the "remi" stack (absolute build
+  contexts in the stored copy).
+- booksearch container: python:3.12-slim, boot-time `pip install sqlite-web`
+  with HOME=/tmp, CLI at /tmp/.local/bin/sqlite_web. The booksearch-venv in
+  the projects tree is no longer used by the service (harmless leftover).
+- Empty leftover volumes from an aborted duplicate project (remi_qdrant_data,
+  remi_model_cache, …) are harmless; host-side `docker volume rm` optional.
+- Dockhand API notes: image pull = POST /api/images/pull?env=1
+  {"image","tag"}; stack create = POST /api/stacks {"name","compose"};
+  stack compose update = PUT /api/stacks/<name>/compose {"content"};
+  container delete = DELETE /api/containers/<id>; Zoraxy proxy delete =
+  POST /api/proxy/del {"ep"}.
