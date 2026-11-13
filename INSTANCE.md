@@ -75,28 +75,31 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
 1. apps nginx `:8080` transition publish — retire after final route audit
    (no vhost targets it since P4)
 
-## P4 notes (2026-11-11)
+## P4 completion notes (2026-11-11/12)
 
-- REMI helper UIs (qdrant/ideas/booksearch/graph/bolt) migrated out of the
-  apps container into this stack as bind-mounted containers
-  (remi-qdrant-proxy / remi-ideas / remi-booksearch / remi-graph-proxy /
-  remi-bolt-proxy); Zoraxy upstreams re-pointed; apps ports 8124-8128
-  retired (s6 bundles removed, ports refused).
-- **Dockhand "remi" stack**: remi_backend was ADOPTED into Dockhand without
-  a compose location, so it cannot deploy. A sibling stack "remi" was
-  registered from an ABSOLUTIZED copy of the repo compose (all binds, build
-  contexts and env_files → /opt/codery/projects/REMI/...); deploying it
-  reconciles the same compose project (`name: remi_backend` in the file)
-  and is the ONLY deploy path for REMI until Dockhand supports
-  adopted-stack locations. The old "remi_backend" record is a cosmetic
-  duplicate view of the same containers.
-- REMI backend rebuilds work from the "remi" stack (absolute build
-  contexts in the stored copy).
+- REMI helper UIs (qdrant/ideas/booksearch/graph/bolt) live INSIDE the
+  remi_backend compose project — one project, one file
+  (`projects/REMI/docker-compose.yml`, committed to the REMI repo), 14
+  containers, all visible in the single Dockhand `remi_backend` entry
+  (sourceType: internal — imported in place, file stays in the repo).
+- **Deploy = Dockhand Deploy button** for everything REMI, backend rebuilds
+  included. Dockhand v1.0.57 deploys imported stacks with the ORIGINAL
+  compose location as working directory — relative binds verified via
+  container inspect (`/opt/codery/projects/REMI/...`, not /app/data).
+  Dockhand older than ~1.0.13 would misresolve them to /app/data/stacks.
+- Zoraxy upstreams for the helpers are **service-name aliases**
+  (qdrant-proxy:8125, ideas:8124, booksearch:8126, graph-proxy:8127,
+  bolt-proxy:8128) — stable across recreates; NO container_name anywhere in
+  the file (fixed names were a cross-project collision foot-gun, removed).
+- frontend service starts with `astro dev --force`: the persistent
+  frontend_node_modules volume keeps Astro's dev-server lock across
+  recreates, and a stale lock otherwise crash-loops the container.
 - booksearch container: python:3.12-slim, boot-time `pip install sqlite-web`
-  with HOME=/tmp, CLI at /tmp/.local/bin/sqlite_web. The booksearch-venv in
-  the projects tree is no longer used by the service (harmless leftover).
-- Empty leftover volumes from an aborted duplicate project (remi_qdrant_data,
-  remi_model_cache, …) are harmless; host-side `docker volume rm` optional.
+  with HOME=/tmp (non-root pip), CLI at /tmp/.local/bin/sqlite_web. The
+  booksearch-venv in the projects tree is no longer used (harmless leftover).
+- The interim "remi" Dockhand stack and its 7 empty remi_* volumes were
+  removed (2026-11-12). The 3 remi_answer_engine_* volumes are from a defunct
+  past project — pending Rob's inspect-then-delete verdict.
 - Dockhand API notes: image pull = POST /api/images/pull?env=1
   {"image","tag"}; stack create = POST /api/stacks {"name","compose"};
   stack compose update = PUT /api/stacks/<name>/compose {"content"};
