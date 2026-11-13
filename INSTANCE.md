@@ -72,8 +72,11 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
 
 ## Known debt / pending work
 
-1. apps nginx `:8080` transition publish — retire after final route audit
-   (no vhost targets it since P4)
+1. ~~apps nginx `:8080` transition publish~~ — DONE (2026-11-13): nginx s6
+   service removed from the baked image; `:8080` publish removed from the
+   devtools compose. codery-apps:20261112 ships neither.
+2. remi_answer_engine_* volumes (3) — pending Rob's inspect-then-delete
+   verdict (defunct past project).
 
 ## P4 completion notes (2026-11-11/12)
 
@@ -105,3 +108,42 @@ Zoraxy proxy-delete API: `POST /api/proxy/del` with form param `ep=<domain>`.)
   stack compose update = PUT /api/stacks/<name>/compose {"content"};
   container delete = DELETE /api/containers/<id>; Zoraxy proxy delete =
   POST /api/proxy/del {"ep"}.
+
+## Nix store drift incident (2026-11-12/13)
+
+The 20261112 apps image deploy skipped the `/nix` store sync (the mandatory
+step had been dropped in the RUNBOOK rewrite) — root process failure. Chain
+of fallout, all fixed:
+
+- **Shell/PATH**: gem's home dotfiles symlink into the new image's
+  home-manager generation (`80g6dilvk-...`) → absent from the old volume
+  store → dangling → bare sshd PATH → mosh (`NoMoshServerArgs`),
+  `tooladd`, coreutils all unreachable. Recovered by force-copying the
+  missing generation into the volume (OpenMINIS run; an earlier
+  docker-run copy silently failed to persist — cause never determined —
+  which is why every recovery step now verifies at the raw-volume AND
+  exec layers).
+- **nix config**: the nixos/nix base ships `/etc/nix/nix.conf` as a symlink
+  INTO the store (`<hash>-base-system/...`) → post-drift it dangled → every
+  bare `nix` call died with "experimental Nix feature 'nix-command' is
+  disabled". Fixed live: real file written at `/etc/nix/nix.conf`
+  (`experimental-features = nix-command flakes`).
+- **tooladd**: gem-level `nix profile list` (manifest step) cannot take
+  root's big-lock → noisy failure AFTER a successful install; the
+  "already installed" check silently failed the same way. Repo fix: ALL
+  nix store-db ops run under sudo; manifest write + git stay as gem.
+- `vim` added to the tools profile via tooladd (manifest now cloc + vim).
+
+**Repo fixes committed** (ride the next image build; live stopgap already
+in place): Dockerfile bakes a real `/etc/nix/nix.conf` (rm -f first — the
+base's store symlink); tooladd/tools-replay pass explicit
+`--extra-experimental-features` flags and use `add` not `install`;
+tools-replay had a POSIX violation (`<<<` in a /bin/sh script) fixed;
+`nix-store-sync.sh` now does a FULL `cp -a` (no `-n` skip) with in-run
+verification; RUNBOOK reinstates the mandatory sync step with the failure
+class documented.
+
+**Ops rule**: every apps image deploy runs
+`host/scripts/nix-store-sync.sh <new-image> codery-apps-nix` BEFORE
+deploying, then verifies `ssh gem@apps 'echo $PATH'` includes the nix
+profile dirs.
